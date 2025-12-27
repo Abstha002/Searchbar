@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Search</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            transition: background 0.3s;
+        }
+
+        body.dark-mode {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+        }
+
+        .container {
+            max-width: 700px;
+            width: 100%;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .search-box {
+            background: white;
+            border-radius: 50px;
+            padding: 8px 24px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s;
+        }
+
+        body.dark-mode .search-box {
+            background: #2d2d44;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+        }
+
+        .search-box:focus-within {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+        }
+
+        body.dark-mode .search-box:focus-within {
+            box-shadow: 0 15px 50px rgba(0,0,0,0.6);
+        }
+
+        .search-icon {
+            color: #667eea;
+            font-size: 24px;
+        }
+
+        body.dark-mode .search-icon {
+            color: #a78bfa;
+        }
+
+        input {
+            border: none;
+            outline: none;
+            font-size: 18px;
+            width: 100%;
+            padding: 16px 0;
+            background: transparent;
+            color: #333;
+        }
+
+        body.dark-mode input {
+            color: #e0e0e0;
+        }
+
+        input::placeholder {
+            color: #999;
+        }
+
+        body.dark-mode input::placeholder {
+            color: #888;
+        }
+
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .mode-toggle, .calc-toggle {
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+        }
+
+        .mode-toggle:hover, .calc-toggle:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+
+        .calculator {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 20px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        body.dark-mode .calculator {
+            background: rgba(45, 45, 68, 0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .calculator.active {
+            display: block;
+        }
+
+        .calc-display {
+            background: rgba(255,255,255,0.9);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: right;
+            font-size: 28px;
+            margin-bottom: 15px;
+            min-height: 60px;
+            word-wrap: break-word;
+            color: #333;
+        }
+
+        body.dark-mode .calc-display {
+            background: rgba(30, 30, 50, 0.9);
+            color: #e0e0e0;
+        }
+
+        .calc-buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .calc-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .calc-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+
+        .calc-btn:active {
+            transform: scale(0.95);
+        }
+
+        .calc-btn.operator {
+            background: rgba(102, 126, 234, 0.4);
+        }
+
+        .calc-btn.equals {
+            background: rgba(118, 75, 162, 0.5);
+            grid-column: span 2;
+        }
+
+        .calc-btn.clear {
+            background: rgba(239, 68, 68, 0.4);
+        }
+
+        .examples {
+            margin-top: 40px;
+            color: white;
+        }
+
+        .examples h3 {
+            text-align: center;
+            margin-bottom: 20px;
+            opacity: 0.9;
+        }
+
+        .example-item {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 12px 20px;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        body.dark-mode .example-item {
+            background: rgba(45, 45, 68, 0.4);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .example-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateX(5px);
+        }
+
+        body.dark-mode .example-item:hover {
+            background: rgba(45, 45, 68, 0.6);
+        }
+
+        .status {
+            text-align: center;
+            margin-top: 20px;
+            color: white;
+            font-size: 14px;
+            min-height: 20px;
+            opacity: 0.8;
+        }
+
+        .powered {
+            position: fixed;
+            bottom: 20px;
+            color: white;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🤖 AI Smart Search</h1>
+        
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input 
+                type="text" 
+                id="searchInput" 
+                placeholder="Try: play taylor swift on spotify..."
+                autocomplete="off"
+            >
+        </div>
+
+        <div class="controls">
+            <button class="mode-toggle" onclick="toggleDarkMode()">
+                🌙 Dark Mode
+            </button>
+            <button class="calc-toggle" onclick="toggleCalculator()">
+                🔢 Calculator
+            </button>
+        </div>
+
+        <div class="calculator" id="calculator">
+            <div class="calc-display" id="calcDisplay">0</div>
+            <div class="calc-buttons">
+                <button class="calc-btn clear" onclick="clearCalc()">C</button>
+                <button class="calc-btn operator" onclick="appendCalc('/')">/</button>
+                <button class="calc-btn operator" onclick="appendCalc('*')">×</button>
+                <button class="calc-btn operator" onclick="deleteCalc()">⌫</button>
+                
+                <button class="calc-btn" onclick="appendCalc('7')">7</button>
+                <button class="calc-btn" onclick="appendCalc('8')">8</button>
+                <button class="calc-btn" onclick="appendCalc('9')">9</button>
+                <button class="calc-btn operator" onclick="appendCalc('-')">-</button>
+                
+                <button class="calc-btn" onclick="appendCalc('4')">4</button>
+                <button class="calc-btn" onclick="appendCalc('5')">5</button>
+                <button class="calc-btn" onclick="appendCalc('6')">6</button>
+                <button class="calc-btn operator" onclick="appendCalc('+')">+</button>
+                
+                <button class="calc-btn" onclick="appendCalc('1')">1</button>
+                <button class="calc-btn" onclick="appendCalc('2')">2</button>
+                <button class="calc-btn" onclick="appendCalc('3')">3</button>
+                <button class="calc-btn operator" onclick="appendCalc('%')">%</button>
+                
+                <button class="calc-btn" onclick="appendCalc('0')">0</button>
+                <button class="calc-btn" onclick="appendCalc('.')">.</button>
+                <button class="calc-btn equals" onclick="calculateResult()">=</button>
+            </div>
+        </div>
+
+        <div class="status" id="status"></div>
+
+        <div class="examples">
+            <h3>Try these examples:</h3>
+            <div class="example-item" onclick="useExample(this)">
+                play taylor swift on spotify
+            </div>
+            <div class="example-item" onclick="useExample(this)">
+                play kuma sagar on youtube
+            </div>
+            <div class="example-item" onclick="useExample(this)">
+                play the fate of ophelia
+            </div>
+            <div class="example-item" onclick="useExample(this)">
+                find about mt. everest on chatgpt
+            </div>
+            <div class="example-item" onclick="useExample(this)">
+                search python tutorial on google
+            </div>
+            <div class="example-item" onclick="useExample(this)">
+                ask grok about AI trends
+            </div>
+        </div>
+    </div>
+
+    <div class="powered">Powered by AB's Tech</div>
+
+    <script>
+        const input = document.getElementById('searchInput');
+        const status = document.getElementById('status');
+        const calcDisplay = document.getElementById('calcDisplay');
+        let calcExpression = '';
+        let darkMode = false;
+
+        // Check for saved dark mode preference
+        if (localStorage.getItem('darkMode') === 'true') {
+            toggleDarkMode();
+        }
+
+        input.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                processSearch(input.value);
+            }
+        });
+
+        function toggleDarkMode() {
+            darkMode = !darkMode;
+            document.body.classList.toggle('dark-mode');
+            const btn = document.querySelector('.mode-toggle');
+            btn.textContent = darkMode ? '☀️ Light Mode' : '🌙 Dark Mode';
+            localStorage.setItem('darkMode', darkMode);
+        }
+
+        function toggleCalculator() {
+            const calc = document.getElementById('calculator');
+            calc.classList.toggle('active');
+        }
+
+        function appendCalc(value) {
+            if (calcExpression === '0' || calcExpression === 'Error') {
+                calcExpression = value;
+            } else {
+                calcExpression += value;
+            }
+            calcDisplay.textContent = calcExpression;
+        }
+
+        function clearCalc() {
+            calcExpression = '0';
+            calcDisplay.textContent = '0';
+        }
+
+        function deleteCalc() {
+            if (calcExpression.length > 1) {
+                calcExpression = calcExpression.slice(0, -1);
+            } else {
+                calcExpression = '0';
+            }
+            calcDisplay.textContent = calcExpression;
+        }
+
+        function calculateResult() {
+            try {
+                const result = eval(calcExpression.replace('×', '*'));
+                calcExpression = result.toString();
+                calcDisplay.textContent = result;
+            } catch (error) {
+                calcExpression = 'Error';
+                calcDisplay.textContent = 'Error';
+            }
+        }
+
+        function useExample(element) {
+            const text = element.textContent.trim();
+            input.value = text;
+            processSearch(text);
+        }
+
+        function processSearch(query) {
+            if (!query.trim()) return;
+
+            status.textContent = 'Processing...';
+            
+            const q = query.toLowerCase().trim();
+            
+            // Calculator detection
+            if (/^[\d+\-*/().% ]+$/.test(q)) {
+                try {
+                    const result = eval(q.replace('×', '*'));
+                    status.textContent = `Result: ${result}`;
+                    setTimeout(() => status.textContent = '', 3000);
+                    return;
+                } catch (e) {
+                    status.textContent = 'Invalid calculation';
+                    setTimeout(() => status.textContent = '', 3000);
+                    return;
+                }
+            }
+            
+            // Spotify detection
+            if (q.includes('spotify')) {
+                const song = extractContent(q, ['play', 'on spotify', 'spotify']);
+                const url = `https://open.spotify.com/search/${encodeURIComponent(song)}`;
+                redirect(url, 'Opening Spotify...');
+                return;
+            }
+            
+            // YouTube detection - Using embed/search URL trick
+            if (q.includes('youtube') || q.includes('play')) {
+                const video = extractContent(q, ['play', 'on youtube', 'youtube', 'video']);
+                
+                // Use YouTube's search with immediate redirect to first result
+                // This opens the search page which you can immediately click the first video
+                const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(video + " official audio")}`;
+                
+                status.textContent = 'Opening YouTube...';
+                setTimeout(() => {
+                    window.open(searchUrl, '_blank');
+                    input.value = '';
+                    status.textContent = 'Click the first video to play! 🎵';
+                    setTimeout(() => status.textContent = '', 4000);
+                }, 300);
+                return;
+            }
+            
+            // ChatGPT detection
+            if (q.includes('chatgpt') || q.includes('gpt')) {
+                const topic = extractContent(q, ['find about', 'search', 'on chatgpt', 'chatgpt', 'ask', 'about']);
+                const url = `https://chat.openai.com/?q=${encodeURIComponent(topic)}`;
+                redirect(url, 'Opening ChatGPT...');
+                return;
+            }
+            
+            // Grok detection
+            if (q.includes('grok')) {
+                const topic = extractContent(q, ['find about', 'search', 'on grok', 'grok', 'ask', 'about']);
+                const url = `https://x.com/i/grok?q=${encodeURIComponent(topic)}`;
+                redirect(url, 'Opening Grok...');
+                return;
+            }
+            
+            // Perplexity detection
+            if (q.includes('perplexity')) {
+                const topic = extractContent(q, ['find about', 'search', 'on perplexity', 'perplexity', 'ask', 'about']);
+                const url = `https://www.perplexity.ai/search?q=${encodeURIComponent(topic)}`;
+                redirect(url, 'Opening Perplexity...');
+                return;
+            }
+            
+            // Google search (default)
+            const url = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
+            redirect(url, 'Searching Google...');
+        }
+
+        function extractContent(query, removeWords) {
+            let result = query;
+            removeWords.forEach(word => {
+                result = result.replace(new RegExp(word, 'gi'), ' ');
+            });
+            return result.trim();
+        }
+
+        function redirect(url, message) {
+            status.textContent = message;
+            setTimeout(() => {
+                window.open(url, '_blank');
+                input.value = '';
+                status.textContent = '';
+            }, 500);
+        }
+    </script>
+</body>
+</html>
